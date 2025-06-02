@@ -6,17 +6,20 @@ export class User {
   id: number;
 
   @Column()
-  name: string;
+  username: string;
 
   @Column()
   age: number;
 
   @Column()
-  passwd: string;
+  password: string;
 
   @Column({ default: true })
   isActive: boolean;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createTime: Date;
+
+  @Column()
+  avatar?: string;
 }

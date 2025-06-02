@@ -1,14 +1,33 @@
-import { Controller, Body, Post, UnauthorizedException } from '@nestjs/common';
+import { Controller, Body, Post, UnauthorizedException, Header } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { SignupDto } from './dto/auth.dto';
+import { UserService } from '../user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,
+    private readonly userService: UserService) { }
 
   @Post('login')
+  @Header('Content-Type', 'application/json')
   async login(@Body() loginDto: { username: string; password: string }) {
     const user = await this.authService.validateUser(loginDto.username, loginDto.password)
-    if (!user) throw new UnauthorizedException();
-    return this.authService.login(user)    
+    if (!user) throw new UnauthorizedException('校验失败');
+    return this.authService.login(user)
+  }
+
+  @Post('signup')
+  @Header('Content-Type', 'application/json')
+  async signup(@Body() signupDto: SignupDto) {
+    const isUserExist = await this.userService.findOne(signupDto.username);
+    if (isUserExist) {
+      throw new Error('用户已存在');
+    }
+    const userCreated = await this.userService.createUser({
+      username: signupDto.username,
+      password: signupDto.password,
+      age: 0,
+    });
+    return this.authService.login(userCreated);
   }
 }

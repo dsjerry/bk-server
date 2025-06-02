@@ -18,8 +18,8 @@ describe('UserService', () => {
 
   it('show return users', () => {
     expect(service.getUsers()).toEqual([
-      { id: 1, name: '小明', age: 18, passwd: '123' },
-      { id: 2, name: '小白', age: 19, passwd: '123' }
+      { id: 1, name: '小明', age: 18, password: '123' },
+      { id: 2, name: '小白', age: 19, password: '123' }
     ])
   })
 });
