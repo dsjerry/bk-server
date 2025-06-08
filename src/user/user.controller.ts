@@ -1,17 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { Roles } from 'src/auth/roles.decorator';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { User } from './entities/user.entity';
+import { User } from '../entity/user.entity';
 
-@ApiTags('users')
-@Controller('users')
-@UseGuards(RolesGuard)
+@ApiTags('user')
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
-  @Get()
+  @Get('list')
   @ApiOkResponse({
     description: '获取所有用户',
     type: [User],
@@ -20,23 +17,12 @@ export class UserController {
     return this.userService.getUsers();
   }
 
-  @Get('admin')
-  @Roles('admin')
+  @Get('detail')
   @ApiOkResponse({
-    description: '获取管理员数据',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Admin Data',
-        },
-      },
-    },
+    description: '获取用户详情',
+    type: User,
   })
-  getAdminData() {
-    return { message: 'Admin Data' };
+  getUserById(@Query('id') id: number) {
+    return this.userService.findOneById(id);
   }
-
-
 }

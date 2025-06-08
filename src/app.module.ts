@@ -5,8 +5,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { User } from './user/entities/user.entity';
+import { User } from './entity/user.entity';
+import { Keeping } from './entity/keeping.entity';
 import { LoggerMiddleWare } from './middleware/logger.middleware';
+import { KeepingController } from './keeping/keeping.controller';
+import { KeepingModule } from './keeping/keeping.module';
 
 @Module({
   imports: [
@@ -26,12 +29,13 @@ import { LoggerMiddleWare } from './middleware/logger.middleware';
         username: config.get('DB_USER'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_DATABASE'),
-        entities: [User],
+        entities: [User, Keeping],
         synchronize: true,
       }),
     }),
+    KeepingModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, KeepingController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {

@@ -2,8 +2,8 @@ import { Injectable, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
+import { CreateUserDto } from 'src/dto/user.dto';
+import { User } from '../entity/user.entity';
 
 
 @Injectable()
@@ -30,8 +30,10 @@ export class UserService {
       .getOne();
 
     if (!user) return null;
-    const { password, ...result } = user
+    return user;
+  }
 
-    return result;
+  findOneById(id: number) {
+    return this.userRepository.findOne({ where: { id } });
   }
 }
