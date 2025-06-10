@@ -1,8 +1,9 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { KeepingService } from './keeping.service';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Keeping } from '../entity/keeping.entity';
 import { KeepingCreateDto, KeepingUpdateDto } from '../dto/keeping.dto';
+import { JwtGuard } from 'src/guard/jwt.guard';
 
 @ApiTags('记账')
 @Controller('keeping')
@@ -28,12 +29,14 @@ export class KeepingController {
   }
 
   @Post('create')
+  @UseGuards(JwtGuard)
   @ApiOkResponse({
     description: '添加记账',
     type: Keeping,
   })
-  addKeeping(@Body() keepingDto: KeepingCreateDto) {
-    return this.keepingService.create(keepingDto);
+  addKeeping(@Body() keepingDto: KeepingCreateDto, @Req() req: any) {
+    const userId = req.user.userId as number;
+    return this.keepingService.create(keepingDto, userId);
   }
 
   @Post('update')

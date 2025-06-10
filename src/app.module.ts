@@ -10,6 +10,7 @@ import { Keeping } from './entity/keeping.entity';
 import { LoggerMiddleWare } from './middleware/logger.middleware';
 import { KeepingController } from './keeping/keeping.controller';
 import { KeepingModule } from './keeping/keeping.module';
+import { JwtModule } from './jwt/jwt.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { KeepingModule } from './keeping/keeping.module';
       }),
     }),
     KeepingModule,
+    JwtModule,
   ],
   controllers: [AppController, KeepingController],
   providers: [AppService],

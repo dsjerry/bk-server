@@ -19,8 +19,8 @@ export class KeepingService {
         return this.keepingRepository.findOne({ where: { id } }) as Promise<Keeping>;
     }
 
-    create(keepingDto: KeepingCreateDto): Promise<Keeping> {
-        const keeping = this.keepingRepository.create({ ...keepingDto, createUserId: 10086 });
+    create(keepingDto: KeepingCreateDto, createUserId: number): Promise<Keeping> {
+        const keeping = this.keepingRepository.create({ ...keepingDto, createUserId });
         return this.keepingRepository.save(keeping);
     }
 
