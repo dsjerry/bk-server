@@ -22,6 +22,6 @@ export class User {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createTime: Date;
 
-  @Column()
+  @Column({ nullable: true })
   avatar?: string;
 }

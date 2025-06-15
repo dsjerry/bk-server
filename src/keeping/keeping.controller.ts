@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, UseGuards, Req, Delete, Put, Param } from '@nestjs/common';
 import { KeepingService } from './keeping.service';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Keeping } from '../entity/keeping.entity';
@@ -6,6 +6,7 @@ import { KeepingCreateDto, KeepingUpdateDto } from '../dto/keeping.dto';
 import { JwtGuard } from 'src/guard/jwt.guard';
 
 @ApiTags('记账')
+@UseGuards(JwtGuard)
 @Controller('keeping')
 export class KeepingController {
   constructor(private readonly keepingService: KeepingService) { }
@@ -19,17 +20,16 @@ export class KeepingController {
     return this.keepingService.findAll();
   }
 
-  @Get('detail')
+  @Get('detail/:id')
   @ApiOkResponse({
     description: '获取记账详情',
     type: Keeping,
   })
-  getKeepingById(@Query('id') id: number) {
+  getKeepingById(@Param('id') id: number) {
     return this.keepingService.findOne(id);
   }
 
   @Post('create')
-  @UseGuards(JwtGuard)
   @ApiOkResponse({
     description: '添加记账',
     type: Keeping,
@@ -39,12 +39,22 @@ export class KeepingController {
     return this.keepingService.create(keepingDto, userId);
   }
 
-  @Post('update')
+  @Delete('delete/:id')
+  @ApiOkResponse({
+    description: '删除记账',
+    type: Keeping,
+  })
+  deleteKeeping(@Param('id') id: number) {
+    return this.keepingService.delete(id);
+  }
+
+  @Put('update/:id')
   @ApiOkResponse({
     description: '更新记账',
     type: Keeping,
   })
-  updateKeeping(@Body() keepingDto: KeepingUpdateDto) {
-    return this.keepingService.update(keepingDto);
+  updateKeeping(@Param('id') id: number, @Req() req: any, @Body() keepingDto: KeepingUpdateDto) {
+    const userId = req.user.userId as number;
+    return this.keepingService.update({ ...keepingDto, id }, userId);
   }
 }

@@ -13,13 +13,13 @@ export class JwtGuard extends AuthGuard('jwt') {
             result = await super.canActivate(context);
             return result
         } catch (error) {
-            throw new UnauthorizedException('TOKEN验证不通过');
+            throw new UnauthorizedException('TOKEN验证不通过', error);
         }
     }
 
     handleRequest(err: any, user: any, info: any) {
         if (err || !user) {
-            throw err || new UnauthorizedException('验证不通过');
+            throw err || new UnauthorizedException('验证不通过', info);
         }
         return user;
     }

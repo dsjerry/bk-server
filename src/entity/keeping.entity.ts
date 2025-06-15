@@ -14,6 +14,9 @@ export class Keeping {
     @Column()
     transactionType: number;
 
+    @Column({ nullable: true })
+    category: number;
+
     @Column()
     amount: number;
 

@@ -24,8 +24,22 @@ export class KeepingService {
         return this.keepingRepository.save(keeping);
     }
 
-    update(keepingDto: KeepingUpdateDto): Promise<Keeping> {
-        const current = this.findOne(keepingDto.id);
-        return this.keepingRepository.save({ ...current, ...keepingDto });
+    async update(keepingDto: KeepingUpdateDto, createUserId: number) {
+        const current = await this.findOne(keepingDto.id);
+        const beSaved = { ...current, ...keepingDto, createUserId };
+        this.keepingRepository.update(beSaved.id, beSaved);
+        return this.findOne(beSaved.id);
+    }
+
+    async delete(id: number) {
+        const current = await this.findOne(id);
+        if (!current) {
+            throw new Error('删除失败，记录不存在');
+        }
+        const result = await this.keepingRepository.delete(id);
+        if (result.affected === 0) {
+            throw new Error('删除失败');
+        }
+        return '删除成功';
     }
 }
