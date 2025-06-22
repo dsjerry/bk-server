@@ -9,12 +9,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('User API')
-    .setDescription('Manage user API')
-    .setVersion('1.0')
+    .setTitle('BKServer API')
+    .setDescription('BKServer API')
+    .setVersion('0.1')
     .build()
   const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup('api', app, document)
+  SwaggerModule.setup('api-docs', app, document)
 
   app.useGlobalFilters(new HttpExceptionFilter())
 

@@ -5,9 +5,13 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { FileController } from './file.controller';
+import { JwtModule } from 'src/jwt/jwt.module';
+import { UserModule } from 'src/user/user.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { File } from 'src/entity';
 
 @Module({
-    imports: [MulterModule.registerAsync({
+    imports: [UserModule, JwtModule, TypeOrmModule.forFeature([File]), MulterModule.registerAsync({
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => ({
             /**
@@ -29,6 +33,4 @@ import { FileController } from './file.controller';
     providers: [FileService],
     exports: [FileService],
 })
-export class FileModule {
-    constructor(private readonly fileService: FileService) { }
-}
+export class FileModule { }

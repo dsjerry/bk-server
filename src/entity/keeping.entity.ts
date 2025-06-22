@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
+import { Analysis } from "src/analysis/entities/analysis.entity";
 
 @Entity()
 export class Keeping {
@@ -34,4 +35,7 @@ export class Keeping {
 
     @UpdateDateColumn()
     updateTime: Date;
+
+    @OneToMany(() => Analysis, (analysis) => analysis.keeping)
+    analysis: Analysis[];
 }

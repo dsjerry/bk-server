@@ -1,4 +1,4 @@
-import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common'
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common'
 import { Response } from 'express'
 
 @Catch()
@@ -7,7 +7,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const ctx = host.switchToHttp()
         const response = ctx.getResponse<Response>()
 
-        response.status(500).json({
+        response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             message: '服务器异常',
             error: exception.message
         })

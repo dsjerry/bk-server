@@ -5,13 +5,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { User, Keeping, Category } from './entity';
+import { User, Keeping, Category, File } from './entity';
 import { LoggerMiddleWare } from './middleware/logger.middleware';
 import { KeepingController } from './keeping/keeping.controller';
 import { KeepingModule } from './keeping/keeping.module';
 import { JwtModule } from './jwt/jwt.module';
 import { CategoryModule } from './category/category.module';
 import { FileModule } from './file/file.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
   imports: [
@@ -36,11 +37,13 @@ import { FileModule } from './file/file.module';
         username: config.get('DB_USER'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_DATABASE'),
-        entities: [User, Keeping, Category],
+        // entities: [User, Keeping, Category, File], // 使用 autoLoadEntities 就不需要设置 entities
         synchronize: true, // 代码中实体的修改会同步到数据库（生成环境不应该开启）
+        autoLoadEntities: true,
       }),
     }),
     FileModule,
+    AnalysisModule,
   ],
   controllers: [AppController, KeepingController],
   providers: [AppService],

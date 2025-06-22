@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { File as FileEntity } from 'src/entity'
 
 @Entity()
 export class User {
@@ -24,4 +25,7 @@ export class User {
 
   @Column({ nullable: true })
   avatar?: string;
+
+  @OneToMany((type) => FileEntity, (file) => file.user)
+  files: FileEntity[];
 }
