@@ -19,8 +19,11 @@ export class AuthService {
     }
     async login(user: any) {
         const payload = { username: user.username, sub: user.id }
+        const token = await this.jwtService.generateToken(payload)
         return {
-            access_token: await this.jwtService.generateToken(payload)
+            access_token: token.token,
+            expires_in: token.expiresIn,
+            refresh_token: await this.jwtService.generateRefreshToken(payload)
         }
     }
     async signup(user: any) {
@@ -30,8 +33,16 @@ export class AuthService {
             throw new Error('用户已存在');
         }
         const userCreated = await this.userService.createUser(user)
+        const token = await this.jwtService.generateToken(payload)
         return {
-            access_token: await this.jwtService.generateToken(payload)
+            access_token: token.token,
+            expires_in: token.expiresIn,
+            refresh_token: await this.jwtService.generateRefreshToken(payload)
         }
+    }
+
+    async refresh(token: string) {
+        const userInfo = await this.jwtService.verifyRefreshToken(token)
+        return this.login(userInfo)
     }
 }

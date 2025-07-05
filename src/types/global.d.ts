@@ -14,5 +14,7 @@ declare global {
             username: string
             [key: string]: any
         }
+
+        type JWTType = "access" | "refresh" | "file"
     }
 }

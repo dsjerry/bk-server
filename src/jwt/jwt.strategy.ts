@@ -5,6 +5,9 @@ import { ConfigService } from '@nestjs/config'
 
 /**
  * 配置jwt策略
+ * 
+ * - 策略作为统一验证入口（专注验证）
+ * - 模块中注册主要用来配置（提供签名能力）
  */
 
 @Injectable()

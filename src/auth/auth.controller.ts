@@ -2,6 +2,7 @@ import { Controller, Body, Post, UnauthorizedException, Header } from '@nestjs/c
 import { AuthService } from './auth.service';
 import { SigninDto, SignupDto } from 'src/dto/auth.dto';
 import { UserService } from 'src/user/user.service';
+import { ReqUser } from 'src/decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -29,5 +30,13 @@ export class AuthController {
       age: 0,
     });
     return this.authService.login(userCreated);
+  }
+
+  @Post('refresh')
+  @Header('Content-Type', 'application/json')
+  async refresh(@Body('refreshToken') refreshToken: string, @ReqUser() user: BKS.ReqUser) {
+    const result = await this.authService.refresh(refreshToken)
+    if (!result) throw new UnauthorizedException('校验失败');
+    return result
   }
 }

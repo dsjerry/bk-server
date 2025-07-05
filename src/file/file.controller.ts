@@ -65,12 +65,12 @@ export class FileController {
 
     @Get('get/:filename')
     @ApiOperation({ summary: "下载文件" })
-    download(
+    async download(
         @Param('filename') filename: string,
         @Query() query: { type: "download" | "playback", token: string },
         @Res({ passthrough: false }) res: Response
     ) {
-        const info = this.fileService.verifyToken(query.token);
+        const info = await this.fileService.verifyToken(query.token);
         if (!fs.existsSync(info.filepath)) throw new NotFoundException(`File not found : ${info.filepath}`);
 
         const headers: Record<string, string> = {};
