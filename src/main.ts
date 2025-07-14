@@ -3,6 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as express from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { ResponseInterceptor } from './interceptor/response.interceptor';
 import { join } from 'path';
 
 async function bootstrap() {
@@ -17,6 +18,8 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document)
 
   app.useGlobalFilters(new HttpExceptionFilter())
+
+  app.useGlobalInterceptors(new ResponseInterceptor())
 
   app.use('/static', express.static(join(__dirname, '..', 'uploads')))
 

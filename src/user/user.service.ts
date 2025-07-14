@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UserUpdateDto } from 'src/dto/user.dto';
 import { User } from 'src/entity/user.entity';
+import { PaginationDto } from 'src/dto/pagination.dto';
 
 @Injectable()
 export class UserService {
@@ -12,8 +13,17 @@ export class UserService {
     private userRepository: Repository<User>,
   ) { }
 
-  getUsers(): Promise<User[]> {
-    return this.userRepository.find();
+  async getUsers(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+    if (!page || !limit) {
+      const items = await this.userRepository.find();
+      return { items, meta: { total: items.length } };
+    }
+    const [items, total] = await this.userRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { items, meta: { total, page, limit, lastPage: Math.ceil(total / limit) } };
   }
 
   createUser(createUserDto: CreateUserDto): Promise<User> {

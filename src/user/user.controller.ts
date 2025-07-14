@@ -1,10 +1,11 @@
-import { Controller, Get, Param, Patch, NotFoundException, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, NotFoundException, Body, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { instanceToPlain } from 'class-transformer';
 import { UserService } from './user.service';
 import { User } from 'src/entity';
-import { UserUpdateDto } from 'src/dto/user.dto';
 import { JwtGuard } from 'src/guard/jwt.guard';
+import { UserUpdateDto } from 'src/dto/user.dto';
+import { PaginationDto } from 'src/dto/pagination.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -18,8 +19,8 @@ export class UserController {
     type: [User],
   })
   @UseGuards(JwtGuard)
-  getUsers() {
-    return this.userService.getUsers();
+  getUsers(@Query() paginationDto: PaginationDto) {
+    return this.userService.getUsers(paginationDto);
   }
 
   @Get(':id')
@@ -47,5 +48,18 @@ export class UserController {
     const user = await this.userService.updateUser(id, userDto);
 
     return instanceToPlain(user);
+  }
+
+  @Get('username/:name')
+  @ApiOperation({ summary: "根据用户名查询用户" })
+  @ApiOkResponse({
+    description: '返回用户id',
+    type: Number,
+  })
+  async getUserByName(@Param('name') name: string) {
+    const user = await this.userService.findOne(name);
+    return {
+      id: user?.id,
+    };
   }
 }

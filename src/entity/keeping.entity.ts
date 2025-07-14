@@ -6,6 +6,9 @@ export class Keeping {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Column({ nullable: true })
+    localId: string;
+
     @Column()
     createUserId: number;
 

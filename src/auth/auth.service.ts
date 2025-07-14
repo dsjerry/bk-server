@@ -37,7 +37,8 @@ export class AuthService {
         return {
             access_token: token.token,
             expires_in: token.expiresIn,
-            refresh_token: await this.jwtService.generateRefreshToken(payload)
+            refresh_token: await this.jwtService.generateRefreshToken(payload),
+            user: userCreated
         }
     }
 

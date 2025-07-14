@@ -1,4 +1,4 @@
-import { Controller, Body, Post, UnauthorizedException, Header } from '@nestjs/common';
+import { Controller, Body, Post, UnauthorizedException, Header, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDto, SignupDto } from 'src/dto/auth.dto';
 import { UserService } from 'src/user/user.service';
@@ -22,7 +22,10 @@ export class AuthController {
   async signup(@Body() signupDto: SignupDto) {
     const isUserExist = await this.userService.findOne(signupDto.username);
     if (isUserExist) {
-      throw new Error('用户已存在');
+      throw new BadRequestException({
+        id: isUserExist.id,
+        message: '用户已存在'
+      });
     }
     const userCreated = await this.userService.createUser({
       username: signupDto.username,
