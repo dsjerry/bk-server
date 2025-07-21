@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { Keeping } from 'src/entity/keeping.entity';
@@ -44,7 +44,7 @@ export class KeepingService {
     async delete(id: number) {
         const current = await this.findOne(id);
         if (!current) {
-            throw new Error('删除失败，记录不存在');
+            throw new NotFoundException('删除失败，记录不存在');
         }
         const result = await this.keepingRepository.delete(id);
         if (result.affected === 0) {
@@ -103,21 +103,28 @@ export class KeepingService {
      * 3. 解决冲突（客户端提供冲突解决策略）
      * 4. 执行批量操作
      * 5. 返回最新服务端状态
+     * 
+     * 同步过程：
+     * 1. 首次同步：
+     *    - 调用`sync`同步方法发送本地变更
+     *    - 服务端处理并且返回结果
+     *    - 更新本地数据状态（同步、新增、修改、删除）
+     * 2. 处理冲突：
+     *    - 如果有冲突的数据，客户端显示冲突信息并且展示解决方式（客户端、服务端、合并）
+     *    - 使用`resolveConflicts`生成解决方案
+     *    - 再次调用`sync(resolutions)`同步方法将数据发给服务端
+     *    - 服务端处理并且返回结果
+     *    - 更新本地数据状态（同步、新增、修改、删除）
+     * 
      */
     async handleSync(payload: SyncPayload, userId: number): Promise<SyncResult> {
-        const { changes, lastSyncAt, resolutions } = payload;
-        let normalizedChanges: KeepingBatchDto;
-        if (!changes) {
-            normalizedChanges = { creates: [], updates: [], deletes: [] };
-        } else {
-            normalizedChanges = changes as KeepingBatchDto;
-        }
+        const { changes = { creates: [], updates: [], deletes: [] }, lastSyncAt, resolutions } = payload;
 
         // 获取自上次同步以来的服务器变更
         const serverChanges = await this.getChangesSince(lastSyncAt, userId);
 
         // 检测冲突
-        const conflicts = this.detectConflicts(normalizedChanges, serverChanges);
+        const conflicts = this.detectConflicts(changes, serverChanges);
 
         // 如果有冲突且没有提供解决方案，返回冲突信息
         if (conflicts.length > 0 && (!resolutions || resolutions.length === 0)) {
@@ -134,8 +141,8 @@ export class KeepingService {
 
         // 应用冲突解决方案
         const resolvedChanges = conflicts.length > 0
-            ? this.applyResolutions(normalizedChanges, serverChanges, resolutions || [])
-            : normalizedChanges;
+            ? this.applyResolutions(changes, serverChanges, resolutions || [])
+            : changes;
 
         // 执行批量操作
         await this.batchOperation(resolvedChanges, userId);
@@ -143,7 +150,7 @@ export class KeepingService {
         // 获取最新的服务器状态
         const currentState = await this.getCurrentState(userId);
 
-        // 创建localId到serverId的映射
+        // 创建localId到serverId的映射（仅本地存储时使用了时间戳作为唯一ID，服务端使用自增ID）
         const idMappings: { localId: string; serverId: number }[] = [];
         if (resolvedChanges.creates && resolvedChanges.creates.length > 0) {
             for (const createItem of resolvedChanges.creates) {
@@ -197,10 +204,7 @@ export class KeepingService {
         };
     }
 
-    private detectConflicts(
-        clientChanges: KeepingBatchDto,
-        serverChanges: Keeping[]
-    ): ConflictItem[] {
+    private detectConflicts(clientChanges: KeepingBatchDto, serverChanges: Keeping[]) {
         const conflicts: ConflictItem[] = [];
 
         // 检测删除冲突
@@ -241,9 +245,8 @@ export class KeepingService {
         serverChanges: Keeping[],
         resolutions: ConflictResolution[]
     ): KeepingBatchDto {
-        // 确保clientChanges是正确的KeepingBatchDto格式
-        const normalizedChanges = this.normalizeKeepingBatchDto(clientChanges);
-        const resolvedChanges = { ...normalizedChanges };
+        // 客户端已预先处理好数据格式
+        const resolvedChanges = { ...clientChanges };
 
         resolutions.forEach(resolution => {
             switch (resolution.type) {
@@ -278,45 +281,5 @@ export class KeepingService {
         });
 
         return resolvedChanges;
-    }
-
-    /**
-     * 确保KeepingBatchDto对象格式正确，将可能的对象格式转换为数组格式
-     */
-    private normalizeKeepingBatchDto(data: any): KeepingBatchDto {
-        const result: KeepingBatchDto = {
-            creates: [],
-            updates: [],
-            deletes: []
-        };
-
-        // 处理creates字段
-        if (data.creates) {
-            if (Array.isArray(data.creates)) {
-                result.creates = data.creates;
-            } else if (typeof data.creates === 'object') {
-                result.creates = Object.values(data.creates);
-            }
-        }
-
-        // 处理updates字段
-        if (data.updates) {
-            if (Array.isArray(data.updates)) {
-                result.updates = data.updates;
-            } else if (typeof data.updates === 'object') {
-                result.updates = Object.values(data.updates);
-            }
-        }
-
-        // 处理deletes字段
-        if (data.deletes) {
-            if (Array.isArray(data.deletes)) {
-                result.deletes = data.deletes;
-            } else if (typeof data.deletes === 'object') {
-                result.deletes = Object.values(data.deletes).map(Number);
-            }
-        }
-
-        return result;
     }
 }
