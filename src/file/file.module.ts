@@ -9,6 +9,7 @@ import { JwtModule } from 'src/jwt/jwt.module';
 import { UserModule } from 'src/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { File } from 'src/entity';
+import { MinioModule } from 'src/minio/minio.module';
 
 @Module({
     imports: [UserModule, JwtModule, TypeOrmModule.forFeature([File]), MulterModule.registerAsync({
@@ -28,7 +29,7 @@ import { File } from 'src/entity';
                 }
             })
         }),
-    })],
+    }), MinioModule],
     controllers: [FileController],
     providers: [FileService],
     exports: [FileService],

@@ -6,6 +6,9 @@ declare global {
             userId: number;
             filepath: string;
             mime?: MimeType;
+            // minio
+            bucketName?: string;
+            objectName?: string;
         }
 
         /** 请求头中提取的用户信息，在jwt.strategy.ts中配置 */

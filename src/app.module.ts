@@ -13,6 +13,7 @@ import { JwtModule } from './jwt/jwt.module';
 import { CategoryModule } from './category/category.module';
 import { FileModule } from './file/file.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import { MinioModule } from './minio/minio.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AnalysisModule } from './analysis/analysis.module';
     }),
     FileModule,
     AnalysisModule,
+    MinioModule,
   ],
   controllers: [AppController, KeepingController],
   providers: [AppService],

@@ -7,16 +7,19 @@ import { FileService } from './file.service'
 import { FileInfoDto } from 'src/dto/file.dto';
 import { ReqUser } from 'src/decorator';
 import { JwtGuard } from 'src/guard/jwt.guard';
+import { MinioService } from 'src/minio/minio.service';
+import { memoryStorage } from 'multer'
 
 @ApiTags('文件模块')
 @Controller('file')
 export class FileController {
-    constructor(private readonly fileService: FileService) { }
+    constructor(private readonly fileService: FileService, private readonly minioService: MinioService) { }
     @Post('upload')
     // UseInterceptors装饰器用于添加拦截器, FileInterceptor用于处理文件上传（单文件上传）
     // FileInterceptor 接受的数据类型为 multipart/form-data
+    // 默认使用磁盘存储，Minio 需要使用内存存储
     @ApiOperation({ summary: "单文件上传" })
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
     @UseGuards(JwtGuard)
     uploadFile(@UploadedFile() file: Express.Multer.File, @ReqUser() user: BKS.ReqUser) {
         return this.fileService.uploadFile(user.userId, file);
@@ -71,6 +74,24 @@ export class FileController {
         @Res({ passthrough: false }) res: Response
     ) {
         const info = await this.fileService.verifyToken(query.token);
+
+        if (info.bucketName && info.objectName) {
+            const fileStream = await this.minioService.downloadFile(info.bucketName, info.objectName);
+            const headers: Record<string, string> = {};
+            
+            if (info.mime) headers["Content-Type"] = info.mime;
+            if (query.type == "download") {
+                headers["Content-Disposition"] = `attachment; filename="${filename}"`
+            }
+            
+            Object.keys(headers).forEach(key => {
+                res.setHeader(key, headers[key]);
+            });
+
+            return fileStream.pipe(res);
+        }
+
+
         if (!fs.existsSync(info.filepath)) throw new NotFoundException(`File not found : ${info.filepath}`);
 
         const headers: Record<string, string> = {};
