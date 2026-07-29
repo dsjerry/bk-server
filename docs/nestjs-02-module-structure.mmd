@@ -1,0 +1,33 @@
+%% ============================================================================
+%% 图2：模块内部结构（一个典型 Feature Module 的组成）
+%% ============================================================================
+graph TD
+    MOD["📦 @Module()\n模块装饰器"] -->|"注册"| CTRL["🎮 Controller\n控制器"]
+    MOD -->|"提供"| SVC["⚙️ Service\n服务"]
+    MOD -->|"提供"| REPO["🗄️ Repository\n仓库"]
+
+    CTRL -->|"调用"| SVC
+    SVC -->|"使用"| REPO
+    SVC -->|"操作"| ENT["📋 Entity\n实体"]
+
+    CTRL -->|"通过"| PIPE["🔍 Pipe\n管道（验证/转换）"]
+    CTRL -->|"通过"| GRD["🛡️ Guard\n守卫（权限）"]
+    CTRL -->|"通过"| INTR["🔧 Interceptor\n拦截器（日志/缓存）"]
+    CTRL -->|"使用"| DECO["🏷️ Decorator\n装饰器"]
+    CTRL -->|"接收"| DTO["📄 DTO\n数据传输对象"]
+
+    MOD -->|"全局注册"| FLTR["⚠️ ExceptionFilter\n异常过滤器"]
+    MOD -->|"全局注册"| MDW["🔄 Middleware\n中间件"]
+
+    style MOD fill:#e8eaf6,stroke:#283593,color:#000
+    style CTRL fill:#c5cae9,stroke:#3949ab,color:#000
+    style SVC fill:#fff8e1,stroke:#f9a825,color:#000
+    style REPO fill:#e0e0e0,stroke:#616161,color:#000
+    style ENT fill:#e0f2f1,stroke:#00796b,color:#000
+    style PIPE fill:#b2dfdb,stroke:#00796b,color:#000
+    style GRD fill:#ffcdd2,stroke:#c62828,color:#000
+    style INTR fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style DECO fill:#f8bbd0,stroke:#ad1457,color:#000
+    style DTO fill:#bbdefb,stroke:#1565c0,color:#000
+    style FLTR fill:#ffccbc,stroke:#bf360c,color:#000
+    style MDW fill:#ffe0b2,stroke:#e65100,color:#000

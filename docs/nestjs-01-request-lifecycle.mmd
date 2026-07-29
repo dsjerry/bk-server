@@ -1,0 +1,32 @@
+%% ============================================================================
+%% 图1：请求生命周期（请求从进入应用到返回响应的完整路径）
+%% ============================================================================
+graph TD
+    REQ["📩 HTTP 请求"] --> MID["🔄 Middleware\n中间件"]
+    MID --> GUA["🛡️ Guard\n守卫"]
+    GUA --> INT1["🔧 Interceptor\n拦截器（前置）"]
+    INT1 --> PIP["🔍 Pipe\n管道"]
+    PIP --> CTR["🎮 Controller\n控制器"]
+    CTR --> SRV["⚙️ Service\n服务层"]
+    SRV --> DB[("🗄️ Database\n数据库")]
+    DB --> SRV
+    SRV --> CTR
+    CTR --> INT2["🔧 Interceptor\n拦截器（后置）"]
+    INT2 --> FLT{"❌ 异常？"}
+    FLT -->|"是"| EXC["⚠️ ExceptionFilter\n异常过滤器"]
+    FLT -->|"否"| RES["📨 HTTP 响应"]
+    EXC --> RES
+
+    %% 样式
+    style REQ fill:#e1f5fe,stroke:#0288d1,color:#000
+    style RES fill:#e8f5e9,stroke:#388e3c,color:#000
+    style MID fill:#fff3e0,stroke:#f57c00,color:#000
+    style GUA fill:#fce4ec,stroke:#c62828,color:#000
+    style INT1 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style INT2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style PIP fill:#e0f2f1,stroke:#00796b,color:#000
+    style CTR fill:#e8eaf6,stroke:#283593,color:#000
+    style SRV fill:#fff8e1,stroke:#f9a825,color:#000
+    style DB fill:#e0e0e0,stroke:#616161,color:#000
+    style FLT fill:#ffebee,stroke:#b71c1c,color:#000
+    style EXC fill:#ffcdd2,stroke:#c62828,color:#000

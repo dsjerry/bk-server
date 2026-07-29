@@ -1,0 +1,24 @@
+%% ============================================================================
+%% 图3：依赖注入机制
+%% ============================================================================
+graph LR
+    subgraph DI["💉 依赖注入 (Dependency Injection)"]
+        PROVIDER["@Injectable()\n提供者"] -->|"注入到"| CONSUMER["消费者\nController / Service"]
+        MODDI["@Module()\nproviders: [...]"] -->|"注册"| PROVIDER
+        CONSUMER -->|"constructor 声明"| PROVIDER
+    end
+
+    subgraph SCOPE["📦 作用域"]
+        DEFAULT["DEFAULT\n单例，全局共享"]
+        REQUEST["REQUEST\n每次请求新建"]
+        TRANSIENT["TRANSIENT\n每次注入新建"]
+    end
+
+    PROVIDER --> SCOPE
+
+    style PROVIDER fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CONSUMER fill:#fce4ec,stroke:#c62828,color:#000
+    style MODDI fill:#fff3e0,stroke:#e65100,color:#000
+    style DEFAULT fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style REQUEST fill:#fff8e1,stroke:#f9a825,color:#000
+    style TRANSIENT fill:#fce4ec,stroke:#c62828,color:#000

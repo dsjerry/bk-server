@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestJS 核心概念关系总图</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 40px 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .diagram-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin: 0 auto 32px;
+            max-width: 1200px;
+            overflow-x: auto;
+            padding: 32px;
+        }
+        .diagram-card h2 {
+            font-size: 18px;
+            margin-bottom: 4px;
+            color: #283593;
+        }
+        .diagram-card .desc {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+        }
+        .nav a {
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #e8eaf6;
+            color: #283593;
+            transition: background 0.2s;
+        }
+        .nav a:hover { background: #c5cae9; }
+    </style>
+</head>
+<body>
+    <h1>NestJS 核心概念关系总图</h1>
+    <p class="subtitle">请求生命周期 · 模块结构 · 依赖注入 · 模块组织 · 对比 Express · 项目对应</p>
+
+    <nav class="nav">
+        <a href="#d1">图1 请求生命周期</a>
+        <a href="#d2">图2 模块内部结构</a>
+        <a href="#d3">图3 依赖注入</a>
+        <a href="#d4">图4 模块组织关系</a>
+        <a href="#d5">图5 NestJS vs Express</a>
+        <a href="#d6">图6 bk-server 项目结构</a>
+    </nav>
+
+    <div class="diagram-card" id="d1">
+        <h2>图1：请求生命周期</h2>
+        <p class="desc">请求从进入应用到返回响应的完整路径</p>
+        <pre class="mermaid">
+graph TD
+    REQ["📩 HTTP 请求"] --> MID["🔄 Middleware\n中间件"]
+    MID --> GUA["🛡️ Guard\n守卫"]
+    GUA --> INT1["🔧 Interceptor\n拦截器（前置）"]
+    INT1 --> PIP["🔍 Pipe\n管道"]
+    PIP --> CTR["🎮 Controller\n控制器"]
+    CTR --> SRV["⚙️ Service\n服务层"]
+    SRV --> DB[("🗄️ Database\n数据库")]
+    DB --> SRV
+    SRV --> CTR
+    CTR --> INT2["🔧 Interceptor\n拦截器（后置）"]
+    INT2 --> FLT{"❌ 异常？"}
+    FLT -->|"是"| EXC["⚠️ ExceptionFilter\n异常过滤器"]
+    FLT -->|"否"| RES["📨 HTTP 响应"]
+    EXC --> RES
+    style REQ fill:#e1f5fe,stroke:#0288d1,color:#000
+    style RES fill:#e8f5e9,stroke:#388e3c,color:#000
+    style MID fill:#fff3e0,stroke:#f57c00,color:#000
+    style GUA fill:#fce4ec,stroke:#c62828,color:#000
+    style INT1 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style INT2 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style PIP fill:#e0f2f1,stroke:#00796b,color:#000
+    style CTR fill:#e8eaf6,stroke:#283593,color:#000
+    style SRV fill:#fff8e1,stroke:#f9a825,color:#000
+    style DB fill:#e0e0e0,stroke:#616161,color:#000
+    style FLT fill:#ffebee,stroke:#b71c1c,color:#000
+    style EXC fill:#ffcdd2,stroke:#c62828,color:#000
+        </pre>
+    </div>
+
+    <div class="diagram-card" id="d2">
+        <h2>图2：模块内部结构</h2>
+        <p class="desc">一个典型 Feature Module 的组成</p>
+        <pre class="mermaid">
+graph TD
+    MOD["📦 @Module()\n模块装饰器"] -->|"注册"| CTRL["🎮 Controller\n控制器"]
+    MOD -->|"提供"| SVC["⚙️ Service\n服务"]
+    MOD -->|"提供"| REPO["🗄️ Repository\n仓库"]
+    CTRL -->|"调用"| SVC
+    SVC -->|"使用"| REPO
+    SVC -->|"操作"| ENT["📋 Entity\n实体"]
+    CTRL -->|"通过"| PIPE["🔍 Pipe\n管道（验证/转换）"]
+    CTRL -->|"通过"| GRD["🛡️ Guard\n守卫（权限）"]
+    CTRL -->|"通过"| INTR["🔧 Interceptor\n拦截器（日志/缓存）"]
+    CTRL -->|"使用"| DECO["🏷️ Decorator\n装饰器"]
+    CTRL -->|"接收"| DTO["📄 DTO\n数据传输对象"]
+    MOD -->|"全局注册"| FLTR["⚠️ ExceptionFilter\n异常过滤器"]
+    MOD -->|"全局注册"| MDW["🔄 Middleware\n中间件"]
+    style MOD fill:#e8eaf6,stroke:#283593,color:#000
+    style CTRL fill:#c5cae9,stroke:#3949ab,color:#000
+    style SVC fill:#fff8e1,stroke:#f9a825,color:#000
+    style REPO fill:#e0e0e0,stroke:#616161,color:#000
+    style ENT fill:#e0f2f1,stroke:#00796b,color:#000
+    style PIPE fill:#b2dfdb,stroke:#00796b,color:#000
+    style GRD fill:#ffcdd2,stroke:#c62828,color:#000
+    style INTR fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style DECO fill:#f8bbd0,stroke:#ad1457,color:#000
+    style DTO fill:#bbdefb,stroke:#1565c0,color:#000
+    style FLTR fill:#ffccbc,stroke:#bf360c,color:#000
+    style MDW fill:#ffe0b2,stroke:#e65100,color:#000
+        </pre>
+    </div>
+
+    <div class="diagram-card" id="d3">
+        <h2>图3：依赖注入机制</h2>
+        <p class="desc">DI 容器如何注册、注入和管理作用域</p>
+        <pre class="mermaid">
+graph LR
+    subgraph DI["💉 依赖注入 (Dependency Injection)"]
+        PROVIDER["@Injectable()\n提供者"] -->|"注入到"| CONSUMER["消费者\nController / Service"]
+        MODDI["@Module()\nproviders: [...]"] -->|"注册"| PROVIDER
+        CONSUMER -->|"constructor 声明"| PROVIDER
+    end
+    subgraph SCOPE["📦 作用域"]
+        DEFAULT["DEFAULT\n单例，全局共享"]
+        REQUEST["REQUEST\n每次请求新建"]
+        TRANSIENT["TRANSIENT\n每次注入新建"]
+    end
+    PROVIDER --> SCOPE
+    style PROVIDER fill:#e3f2fd,stroke:#1565c0,color:#000
+    style CONSUMER fill:#fce4ec,stroke:#c62828,color:#000
+    style MODDI fill:#fff3e0,stroke:#e65100,color:#000
+    style DEFAULT fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style REQUEST fill:#fff8e1,stroke:#f9a825,color:#000
+    style TRANSIENT fill:#fce4ec,stroke:#c62828,color:#000
+        </pre>
+    </div>
+
+    <div class="diagram-card" id="d4">
+        <h2>图4：模块组织关系</h2>
+        <p class="desc">AppModule 根模块与子模块、共享模块的依赖关系</p>
+        <pre class="mermaid">
+graph TD
+    subgraph APP["AppModule（根模块）"]
+        UM["UserModule\n用户模块"] -.->|"exports"| AM["AuthModule\n认证模块"]
+        KM["KeepingModule\n记账模块"] -->|"imports"| CM["CategoryModule\n分类模块"]
+        FM["FileModule\n文件模块"] -->|"imports"| MM["MinioModule\n对象存储"]
+        ANM["AnalysisModule\n分析模块"] -->|"imports"| KM
+    end
+    subgraph SHARED["SharedModule（共享模块）"]
+        CFG["ConfigModule\n全局配置"]
+        TYP["TypeOrmModule\n数据库连接"]
+        JWT["JwtModule\nJWT 认证"]
+    end
+    APP -->|"imports"| SHARED
+    style APP fill:#e8eaf6,stroke:#283593,color:#000
+    style SHARED fill:#e0f2f1,stroke:#00796b,color:#000
+    style UM fill:#c5cae9,stroke:#3949ab,color:#000
+    style AM fill:#c5cae9,stroke:#3949ab,color:#000
+    style KM fill:#c5cae9,stroke:#3949ab,color:#000
+    style CM fill:#c5cae9,stroke:#3949ab,color:#000
+    style FM fill:#c5cae9,stroke:#3949ab,color:#000
+    style MM fill:#c5cae9,stroke:#3949ab,color:#000
+    style ANM fill:#c5cae9,stroke:#3949ab,color:#000
+    style CFG fill:#b2dfdb,stroke:#00796b,color:#000
+    style TYP fill:#b2dfdb,stroke:#00796b,color:#000
+    style JWT fill:#b2dfdb,stroke:#00796b,color:#000
+        </pre>
+    </div>
+
+    <div class="diagram-card" id="d5">
+        <h2>图5：NestJS vs 传统 Express 对比</h2>
+        <p class="desc">从 Express 升级到 NestJS 的结构化优势</p>
+        <pre class="mermaid">
+graph LR
+    subgraph EXPRESS["Express（传统方式）"]
+        E1["路由定义分散\napp.get('/user', handler)"]
+        E2["中间件堆叠\napp.use(logger, auth, ...)"]
+        E3["逻辑混在一起\nhandler 里写所有代码"]
+    end
+    subgraph NEST["NestJS（结构化）"]
+        N1["Controller 集中管理路由"]
+        N2["Guard / Interceptor / Pipe\n各司其职"]
+        N3["Service 专注业务\nRepository 专注数据"]
+    end
+    EXPRESS -->|"升级到"| NEST
+    style EXPRESS fill:#fff3e0,stroke:#e65100,color:#000
+    style NEST fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style E1 fill:#ffe0b2,stroke:#e65100,color:#000
+    style E2 fill:#ffe0b2,stroke:#e65100,color:#000
+    style E3 fill:#ffe0b2,stroke:#e65100,color:#000
+    style N1 fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style N2 fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style N3 fill:#c8e6c9,stroke:#2e7d32,color:#000
+        </pre>
+    </div>
+
+    <div class="diagram-card" id="d6">
+        <h2>图6：bk-server 项目中的实际对应</h2>
+        <p class="desc">项目实际目录结构与 NestJS 概念的映射关系</p>
+        <pre class="mermaid">
+graph TD
+    subgraph BKSERVER["bk-server 项目结构"]
+        AUTH["auth/\nController + Service\nJWT 登录/注册"]
+        USER["user/\nController + Service\n用户 CRUD"]
+        KEEP["keeping/\nController + Service\n记账 CRUD + 同步"]
+        CAT["category/\nController + Service\n分类管理"]
+        ANAL["analysis/\nController + Service\n数据分析"]
+        FILE["file/\nController + Service\n文件上传"]
+        MINIO["minio/\nModule + Service\nMinIO 对象存储"]
+        CHAT["chat/\nGateway\nWebSocket 实时通信"]
+        JWT["jwt/\nStrategy + Service\nJWT 策略实现"]
+        GUARD["guard/\nJwtGuard + RolesGuard\n认证守卫"]
+        INTER["interceptor/\nResponseInterceptor\n统一响应格式"]
+        FILTER["filters/\nHttpExceptionFilter\n全局异常处理"]
+        MIDDLE["middleware/\nLoggerMiddleware\n请求日志"]
+        DECO["decorator/\n自定义装饰器"]
+    end
+    BKSERVER -.->|"对应"| CONCEPTS["图1-图5 中的概念"]
+    style BKSERVER fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style AUTH fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style USER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style KEEP fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CAT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style ANAL fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style FILE fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style MINIO fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CHAT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style JWT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style GUARD fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style INTER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style FILTER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style MIDDLE fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style DECO fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CONCEPTS fill:#f8bbd0,stroke:#ad1457,color:#000
+        </pre>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+</html>

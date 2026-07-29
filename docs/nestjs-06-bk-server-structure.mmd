@@ -1,0 +1,39 @@
+%% ============================================================================
+%% 图6：bk-server 项目中的实际对应
+%% ============================================================================
+graph TD
+    subgraph BKSERVER["bk-server 项目结构"]
+        AUTH["auth/\nController + Service\nJWT 登录/注册"]
+        USER["user/\nController + Service\n用户 CRUD"]
+        KEEP["keeping/\nController + Service\n记账 CRUD + 同步"]
+        CAT["category/\nController + Service\n分类管理"]
+        ANAL["analysis/\nController + Service\n数据分析"]
+        FILE["file/\nController + Service\n文件上传"]
+        MINIO["minio/\nModule + Service\nMinIO 对象存储"]
+        CHAT["chat/\nGateway\nWebSocket 实时通信"]
+        JWT["jwt/\nStrategy + Service\nJWT 策略实现"]
+        GUARD["guard/\nJwtGuard + RolesGuard\n认证守卫"]
+        INTER["interceptor/\nResponseInterceptor\n统一响应格式"]
+        FILTER["filters/\nHttpExceptionFilter\n全局异常处理"]
+        MIDDLE["middleware/\nLoggerMiddleware\n请求日志"]
+        DECO["decorator/\n自定义装饰器"]
+    end
+
+    BKSERVER -.->|"对应"| CONCEPTS["图1-图5 中的概念"]
+
+    style BKSERVER fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style AUTH fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style USER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style KEEP fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CAT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style ANAL fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style FILE fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style MINIO fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CHAT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style JWT fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style GUARD fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style INTER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style FILTER fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style MIDDLE fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style DECO fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style CONCEPTS fill:#f8bbd0,stroke:#ad1457,color:#000

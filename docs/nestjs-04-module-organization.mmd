@@ -1,0 +1,31 @@
+%% ============================================================================
+%% 图4：模块组织关系
+%% ============================================================================
+graph TD
+    subgraph APP["AppModule（根模块）"]
+        UM["UserModule\n用户模块"] -.->|"exports"| AM["AuthModule\n认证模块"]
+        KM["KeepingModule\n记账模块"] -->|"imports"| CM["CategoryModule\n分类模块"]
+        FM["FileModule\n文件模块"] -->|"imports"| MM["MinioModule\n对象存储"]
+        ANM["AnalysisModule\n分析模块"] -->|"imports"| KM
+    end
+
+    subgraph SHARED["SharedModule（共享模块）"]
+        CFG["ConfigModule\n全局配置"]
+        TYP["TypeOrmModule\n数据库连接"]
+        JWT["JwtModule\nJWT 认证"]
+    end
+
+    APP -->|"imports"| SHARED
+
+    style APP fill:#e8eaf6,stroke:#283593,color:#000
+    style SHARED fill:#e0f2f1,stroke:#00796b,color:#000
+    style UM fill:#c5cae9,stroke:#3949ab,color:#000
+    style AM fill:#c5cae9,stroke:#3949ab,color:#000
+    style KM fill:#c5cae9,stroke:#3949ab,color:#000
+    style CM fill:#c5cae9,stroke:#3949ab,color:#000
+    style FM fill:#c5cae9,stroke:#3949ab,color:#000
+    style MM fill:#c5cae9,stroke:#3949ab,color:#000
+    style ANM fill:#c5cae9,stroke:#3949ab,color:#000
+    style CFG fill:#b2dfdb,stroke:#00796b,color:#000
+    style TYP fill:#b2dfdb,stroke:#00796b,color:#000
+    style JWT fill:#b2dfdb,stroke:#00796b,color:#000

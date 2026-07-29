@@ -1,0 +1,26 @@
+%% ============================================================================
+%% 图5：NestJS vs 传统 Express 对比
+%% ============================================================================
+graph LR
+    subgraph EXPRESS["Express（传统方式）"]
+        E1["路由定义分散\napp.get('/user', handler)"]
+        E2["中间件堆叠\napp.use(logger, auth, ...)"]
+        E3["逻辑混在一起\nhandler 里写所有代码"]
+    end
+
+    subgraph NEST["NestJS（结构化）"]
+        N1["Controller 集中管理路由"]
+        N2["Guard / Interceptor / Pipe\n各司其职"]
+        N3["Service 专注业务\nRepository 专注数据"]
+    end
+
+    EXPRESS -->|"升级到"| NEST
+
+    style EXPRESS fill:#fff3e0,stroke:#e65100,color:#000
+    style NEST fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style E1 fill:#ffe0b2,stroke:#e65100,color:#000
+    style E2 fill:#ffe0b2,stroke:#e65100,color:#000
+    style E3 fill:#ffe0b2,stroke:#e65100,color:#000
+    style N1 fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style N2 fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style N3 fill:#c8e6c9,stroke:#2e7d32,color:#000
