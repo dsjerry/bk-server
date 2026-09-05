@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,7 +12,7 @@ import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class FileService {
-  private readonly MINIO_BUCKET = 'bookkeeping';
+  private readonly MINIO_BUCKET: string;
 
   constructor(
     @InjectRepository(FileEntity)
@@ -19,7 +20,11 @@ export class FileService {
     private readonly jwtService: JwtService,
     private readonly uploadHistoryService: UploadHistoryService,
     private readonly minioService: MinioService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    // 桶名此前硬编码，与环境变量 MINIO_DEFAULT_BUCKET 脱节；默认值保持兼容
+    this.MINIO_BUCKET = this.configService.get<string>('MINIO_DEFAULT_BUCKET') || 'bookkeeping';
+  }
 
   async uploadFile(userId: number, file: Express.Multer.File) {
     const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;

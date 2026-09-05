@@ -1,9 +1,11 @@
-import { Controller, Body, Post, UnauthorizedException, Header, BadRequestException } from '@nestjs/common';
+import { Controller, Body, Post, UnauthorizedException, Header, BadRequestException, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ApiOperation } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SigninDto, SignupDto } from 'src/dto/auth.dto';
 import { UserService } from 'src/user/user.service';
 import { ReqUser } from 'src/decorator';
+import { JwtGuard } from 'src/guard/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -48,5 +50,14 @@ export class AuthController {
     const result = await this.authService.refresh(refreshToken);
     if (!result) throw new UnauthorizedException('校验失败');
     return result;
+  }
+
+  /** 登出：令牌版本 +1，该用户所有已签发的 refresh token 立即失效 */
+  @UseGuards(JwtGuard)
+  @Post('logout')
+  @ApiOperation({ summary: '登出（吊销该用户全部 refresh token）' })
+  async logout(@ReqUser() user: BKS.ReqUser) {
+    await this.userService.bumpTokenVersion(user.userId);
+    return '登出成功';
   }
 }

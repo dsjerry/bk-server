@@ -68,6 +68,10 @@ services:
       FILE_TOKEN_EXPIRED: 1d
       REFRESH_SECRET: change-me
       REFRESH_TOKEN_EXPIRED: 30d
+      # AI 代理：从宿主机环境变量透传（可为空，为空时 /v1/ai/* 返回 503）
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
     ports:
       - '3031:3031'
     volumes:

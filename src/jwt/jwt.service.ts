@@ -53,13 +53,15 @@ export class JwtService {
     return this.jwtService.verifyAsync<BKS.DownloadFileTokenInfo>(token, this.fileSignOptions);
   }
 
-  generateRefreshToken(user: { sub: number; username: string }) {
+  generateRefreshToken(user: { sub: number; username: string; tokenVersion: number }) {
     this.logger.debug(`生成 refresh token: userId=${user.sub} username=${user.username}`);
     return this.jwtService.signAsync(
       {
         sub: user.sub,
         username: user.username,
         type: 'refresh',
+        // 记录签发时的令牌版本：登出/改密码时版本 +1，旧 refresh token 校验即失效
+        tokenVersion: user.tokenVersion,
       },
       this.refreshSignOptions,
     );

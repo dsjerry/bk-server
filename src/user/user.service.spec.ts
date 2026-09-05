@@ -1,20 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { UserService } from './user.service';
 import { User } from 'src/entity/user.entity';
 
 describe('UserService', () => {
   let service: UserService;
 
-  /** 模拟 UserRepository：find/findOne/findOneBy/create/save/update 都是 jest mock */
   const repository = {
     find: jest.fn(),
-    findAndCount: jest.fn(),
     findOne: jest.fn(),
     findOneBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
+    increment: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
 
@@ -31,26 +31,31 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  it('getUsers 不带分页参数时返回全量列表', async () => {
-    const users: Partial<User>[] = [
-      { id: 1, username: '小明', age: 18, password: 'hash', isActive: true, createTime: new Date() },
-      { id: 2, username: '小白', age: 19, password: 'hash', isActive: true, createTime: new Date() },
-    ];
-    repository.find.mockResolvedValue(users);
+  it('createUser 对密码做 bcrypt 哈希（绝不明文入库）', async () => {
+    repository.create.mockImplementation((data: Partial<User>) => data as User);
+    repository.save.mockImplementation((entity: User) => Promise.resolve(entity));
 
-    const result = await service.getUsers({} as any);
+    const result = await service.createUser({ username: '小明', age: 18, password: '123456' });
 
-    expect(repository.find).toHaveBeenCalled();
-    expect(result.items).toHaveLength(2);
-    expect(result.meta.total).toBe(2);
+    // 哈希值与明文不同且可验证
+    expect(result.password).not.toBe('123456');
+    expect(bcrypt.compareSync('123456', result.password)).toBe(true);
   });
 
-  it('getUsers 带分页参数时走 findAndCount 并计算页数', async () => {
-    repository.findAndCount.mockResolvedValue([[{ id: 1 }], 21]);
+  it('updateUser 传入新密码时重新哈希', async () => {
+    repository.findOneBy.mockResolvedValue({ id: 1, username: '小明', password: 'old-hash' } as User);
+    repository.update.mockResolvedValue({ affected: 1, raw: [] });
+    repository.findOneBy.mockResolvedValueOnce({ id: 1, username: '小明', password: 'old-hash' } as User);
 
-    const result = await service.getUsers({ page: 1, limit: 20 } as any);
+    await service.updateUser(1, { password: 'new-password' });
 
-    expect(repository.findAndCount).toHaveBeenCalledWith({ skip: 0, take: 20 });
-    expect(result.meta).toMatchObject({ total: 21, page: 1, limit: 20, lastPage: 2 });
+    const [updateArg] = repository.update.mock.calls[0] as [{ password?: string }];
+    expect(updateArg.password).not.toBe('new-password');
+  });
+
+  it('bumpTokenVersion 通过 increment 递增令牌版本（登出吊销）', async () => {
+    repository.increment.mockResolvedValue({ affected: 1 });
+    await service.bumpTokenVersion(42);
+    expect(repository.increment).toHaveBeenCalledWith({ id: 42 }, 'tokenVersion', 1);
   });
 });

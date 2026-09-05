@@ -3,7 +3,6 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from 'src/jwt/jwt.service';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/entity/user.entity';
-import { CreateUserDto } from 'src/dto/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,36 +21,32 @@ export class AuthService {
     }
     return null;
   }
-  async login(user: Pick<User, 'id' | 'username'>) {
+  async login(user: Pick<User, 'id' | 'username' | 'tokenVersion'>) {
     const payload = { username: user.username, sub: user.id };
     const token = await this.jwtService.generateToken(payload);
     return {
       access_token: token.token,
       expires_in: token.expiresIn,
-      refresh_token: await this.jwtService.generateRefreshToken(payload),
+      refresh_token: await this.jwtService.generateRefreshToken({
+        ...payload,
+        tokenVersion: user.tokenVersion,
+      }),
       // 客户端启用同步时依赖 user 字段拿到服务端用户 id / 用户名（此前缺失，前端拿不到）
       user: { id: user.id, username: user.username },
     };
   }
-  async signup(user: CreateUserDto & Pick<User, 'id'>) {
-    const payload = { username: user.username, sub: user.id };
-    const isUserExist = await this.userService.findOne(user.username);
-    if (isUserExist) {
-      throw new Error('用户已存在');
-    }
-    const userCreated = await this.userService.createUser(user);
-    const token = await this.jwtService.generateToken(payload);
-    return {
-      access_token: token.token,
-      expires_in: token.expiresIn,
-      refresh_token: await this.jwtService.generateRefreshToken(payload),
-      user: userCreated,
-    };
-  }
 
+  /**
+   * 刷新令牌：校验签名后还要比对 tokenVersion ——
+   * 登出/改密码会让版本 +1，旧 refresh token 即使在有效期内也会被拒绝
+   */
   async refresh(token: string) {
-    const userInfo = await this.jwtService.verifyRefreshToken(token);
+    const payload = await this.jwtService.verifyRefreshToken(token);
+    const user = await this.userService.findOneById(payload.sub);
+    if (!user || user.tokenVersion !== (payload as { tokenVersion?: number }).tokenVersion) {
+      return null;
+    }
     // JWT payload 里用户 id 字段名是 sub（见 jwt.service 的签名逻辑），映射回 login 需要的形状
-    return this.login({ id: userInfo.sub, username: userInfo.username });
+    return this.login({ id: user.id, username: user.username, tokenVersion: user.tokenVersion });
   }
 }

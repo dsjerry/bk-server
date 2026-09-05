@@ -1,11 +1,9 @@
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import * as express from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ResponseInterceptor } from './interceptor/response.interceptor';
-import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,8 +29,6 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalInterceptors(new ResponseInterceptor());
-
-  app.use('/static', express.static(join(__dirname, '..', 'uploads')));
 
   // 容器里监听 0.0.0.0，否则端口映射后宿主机访问不到容器内的服务
   await app.listen(process.env.PORT ?? 3031, '0.0.0.0');

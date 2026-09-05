@@ -8,7 +8,6 @@ describe('UserController', () => {
   let controller: UserController;
 
   const userService = {
-    getUsers: jest.fn(),
     findOne: jest.fn(),
     updateUser: jest.fn(),
     findOneById: jest.fn(),
@@ -39,19 +38,25 @@ describe('UserController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('用户列表绝不返回密码（历史泄露问题的回归测试）', async () => {
-    userService.getUsers.mockResolvedValue({ items: [userEntity], meta: { total: 1 } });
+  it('用户详情绝不返回密码（历史泄露问题的回归测试）', async () => {
+    userService.findOneById.mockResolvedValue(userEntity);
 
-    const result = await controller.getUsers({} as any);
+    const result = await controller.getUserById(1, { userId: 1 } as BKS.ReqUser);
 
-    expect(result.items[0]).not.toHaveProperty('password');
-    expect(result.items[0]).toMatchObject({ id: 1, username: '小明' });
+    expect(result).not.toHaveProperty('password');
+    expect(result).toMatchObject({ id: 1, username: '小明' });
+  });
+
+  it('只能查看自己的资料（越权防护）', async () => {
+    const me = { userId: 1, username: '小明' } as BKS.ReqUser;
+    await expect(controller.getUserById(2, me)).rejects.toThrow(ForbiddenException);
+    expect(userService.findOneById).not.toHaveBeenCalled();
   });
 
   it('用户详情同样不返回密码', async () => {
     userService.findOneById.mockResolvedValue(userEntity);
 
-    const result = await controller.getUserById(1);
+    const result = await controller.getUserById(1, { userId: 1 } as BKS.ReqUser);
 
     expect(result).not.toHaveProperty('password');
   });

@@ -24,6 +24,13 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  /**
+   * 令牌版本号：签发 refresh token 时写入 payload，refresh 校验时与库中比对。
+   * 登出/改密码时 +1，即可让该用户所有已签发的 refresh token 立即失效
+   */
+  @Column({ type: 'int', default: 0 })
+  tokenVersion: number;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createTime: Date;
 

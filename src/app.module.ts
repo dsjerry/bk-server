@@ -15,6 +15,7 @@ import { FileModule } from './file/file.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { MinioModule } from './minio/minio.module';
 import { HealthModule } from './health/health.module';
+import { AiModule } from './ai/ai.module';
 import { LoggerMiddleWare } from './middleware/logger.middleware';
 
 @Module({
@@ -56,6 +57,7 @@ import { LoggerMiddleWare } from './middleware/logger.middleware';
     AnalysisModule,
     MinioModule,
     HealthModule,
+    AiModule,
     // 全局限流：默认 100 次/分钟，可用 THROTTLE_TTL / THROTTLE_LIMIT 环境变量调整。
     // 计数存进程内存，单实例够用；多实例部署需换 Redis 存储
     ThrottlerModule.forRootAsync({

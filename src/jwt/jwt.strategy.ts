@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,7 +20,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
   // jwt 验证成功后，这里返回的对象会被附加到请求的对象中，可以通过装饰器@Req()获取
-  validate(payload: { sub: number; username: string }) {
+  validate(payload: { sub: number; username: string; type?: string }) {
+    // 只接受 access token。refresh/file token 用不同 secret 签名本就过不了验签，这里做纵深防御
+    if (payload.type && payload.type !== 'access') {
+      throw new UnauthorizedException('token 类型不正确');
+    }
     return { userId: payload.sub, username: payload.username };
   }
 }
