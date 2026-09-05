@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    # e2e 需要真实 MySQL：用 service 容器起一个，跑完即销毁
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bookkeeping_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      # NODE_ENV=test 且仓库没有 .env.test 文件 → ConfigModule 只读进程环境变量，
+      # 全部连接信息由下方注入（e2e 未注入 DB_HOST 时会自动跳过）
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_DATABASE: bookkeeping_test
+      JWT_SECRET: ci-jwt-secret
+      JWT_EXPIRED: 1d
+      FILE_SECRET: ci-file-secret
+      FILE_TOKEN_EXPIRED: 1d
+      REFRESH_SECRET: ci-refresh-secret
+      REFRESH_TOKEN_EXPIRED: 30d
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: '9000'
+      MINIO_USE_SSL: 'false'
+      MINIO_ACCESS_KEY: ci-key
+      MINIO_SECRET_KEY: ci-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: E2E tests（自动建库：启动时 migrationsRun 会执行基线迁移）
+        run: npm run test:e2e
+
+  # ---------- 部署（模板）----------
+  # 部署目标确定后取消注释并补充服务器信息；镜像构建已由上面的 build 步骤验证过
+  # deploy:
+  #   needs: ci
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Build and push image
+  #       run: |
+  #         docker build -t your-registry/bk-server:${{ github.sha }} .
+  #         docker push your-registry/bk-server:${{ github.sha }}
+  #     - name: Deploy（示例：ssh 到服务器执行 docker compose up）
+  #       uses: appleboy/ssh-action@v1
+  #       with:
+  #         host: ${{ secrets.DEPLOY_HOST }}
+  #         username: ${{ secrets.DEPLOY_USER }}
+  #         key: ${{ secrets.DEPLOY_SSH_KEY }}
+  #         script: |
+  #           cd /srv/bk-server
+  #           docker compose pull && docker compose up -d

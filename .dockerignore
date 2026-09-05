@@ -1,0 +1,16 @@
+# 依赖与构建产物：镜像内重新安装/编译，本地版本不进镜像
+node_modules
+dist
+coverage
+
+# 环境文件含密钥，绝不进镜像（运行时配置通过环境变量注入）
+.env*
+!.env.example
+
+# 本地运行数据与杂项
+uploads
+.git
+.github
+test
+docs
+*.md

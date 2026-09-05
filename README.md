@@ -10,20 +10,23 @@
 src/
 ├── auth/          # 认证（JWT + Passport）
 ├── user/          # 用户管理
-├── keeping/       # 记账核心模块（含同步/冲突处理）
+├── keeping/       # 记账核心模块（KeepingService = CRUD/批量落库，SyncService = 同步/冲突）
 ├── category/      # 分类管理
 ├── analysis/      # 分析模块
 ├── file/          # 文件管理
 ├── minio/         # MinIO 对象存储
-├── chat/          # WebSocket（Socket.IO）
+├── health/        # 健康检查（@nestjs/terminus）
+├── chat/          # WebSocket（Socket.IO，预留）
 ├── jwt/           # JWT 策略
 ├── guard/         # JwtGuard + RolesGuard
 ├── interceptor/   # 统一响应拦截器
 ├── filters/       # 全局异常过滤器
-├── middleware/    # 日志中间件
+├── middleware/    # 全局日志中间件（脱敏）
 ├── decorator/     # 自定义装饰器
-├── dto/           # 公共 DTO
+├── dto/           # 公共 DTO（含 Response DTO 与 Entity 解耦）
 ├── entity/        # 数据实体
+├── config/        # TypeORM CLI 数据源（迁移用）
+├── migrations/    # 数据库迁移文件
 └── types/         # 类型定义
 ```
 
@@ -33,44 +36,48 @@ src/
 - JWT 认证（passport-jwt）+ 角色守卫
 - Swagger API 文档（`/api-docs`）
 - 统一响应格式（`ResponseInterceptor`）
-- 全局异常处理（`HttpExceptionFilter`）
+- 全局异常处理（`HttpExceptionFilter`，5xx 带堆栈日志）
+- 全局入参校验（`ValidationPipe` + class-validator）
 - MinIO 对象存储
 - WebSocket 实时通信
 - 多环境配置（`.env.development` / `.env.production`）
-- 参数校验（class-validator）
-- 客户端数据同步 + 冲突检测/解决
+- 客户端数据同步 + 冲突检测/解决（独立 `SyncService`）
+- 批量操作数据库事务（原子性）
+- 软删除（`@DeleteDateColumn`，同步协议支持删除传播）
+- 数据库迁移模式（`src/migrations/`，启动自动执行）
+- API 版本控制（URI `/v1` 前缀）
+- 全局请求日志（Nest Logger，敏感字段脱敏）
+- 接口限流（`@nestjs/throttler`，登录/注册单独收紧）
+- 健康检查（`/v1/health`，数据库 + 内存）
+- Docker 化（`Dockerfile` + `docker-compose.yml` 一键拉起全环境）
+- CI（GitHub Actions：lint + build + 单测 + e2e）
 - Jest 单测 + e2e 测试框架
 
 ---
 
 ## 📋 TODO 清单
 
-### 🔴 数据库优化（优先）
+### 🔴 数据库优化（已完成）
 
-- [ ] **事务** — `keeping.service.ts` 的 `batchOperation()` 方法是逐条操作，没有事务包裹。改为 `@Transactional()` 或 QueryRunner 事务，确保批量操作的原子性
-- [ ] **索引** — 所有 Entity 均未加 `@Index()`。优先给高频查询字段加索引：
-  - `keeping` 表：`createUserId`、`updateTime`
-  - 加完后用 `EXPLAIN SELECT ...` 验证效果
-- [ ] **软删除** — 目前是物理删除（`repository.delete()`）。改为 TypeORM 的 `@DeleteDateColumn()` 软删除，查询时自动过滤已删除记录
-- [ ] **数据库迁移** — 当前 `synchronize: true` 开发方便但生产危险。改为 migration 模式：
-  ```shell
-  typeorm migration:generate -d src/config/typeorm.config.ts src/migrations/Init
-  ```
+- [x] **事务** — `keeping.service.ts` 的 `batchOperation()` 用 `DataSource.transaction()` 包裹，批量操作原子性（失败整体回滚），对过期数据幂等容错
+- [x] **索引** — `keeping` 表加了复合索引 `idx_keeping_user_update_time`（同步增量查询）和 `idx_keeping_user_local_id`（ID 映射反查）；`user.username` 唯一索引兜底注册查重。EXPLAIN 验证见 `docs/migrations-and-deploy.md`
+- [x] **软删除** — `Keeping` / `Category` / `Analysis` 用 `@DeleteDateColumn()`，查询自动过滤已删记录；同步协议通过 `withDeleted` + `serverChanges.deletes` 把删除传播到其他设备
+- [x] **数据库迁移** — `synchronize` 由 `DB_SYNCHRONIZE` 环境变量控制（默认 false），结构变更走 `src/migrations/`；`npm run migration:generate/run/revert/show`，启动时自动执行未跑过的迁移
 
-### 🟡 架构重构
+### 🟡 架构重构（已完成）
 
-- [ ] **DTO 与 Entity 分离** — Entity 上直接写了 `@Exclude()` 和业务注解，应创建专门的 Response DTO，Entity 只负责数据库映射
-- [ ] **Service 拆分** — `keeping.service.ts` 285 行，同步/冲突逻辑可以抽成独立的 `SyncService`
-- [ ] **API 版本控制** — 路由加上 `/v1/` 前缀，为后续接口升级留空间
-- [ ] **Logger 中间件** — 当前只对 `user` 路由生效，改为全局日志（`forRoutes('*')`）
+- [x] **DTO 与 Entity 分离** — Entity 只做数据库映射；出参走 `src/dto/*-response.dto.ts` 白名单式映射（顺带修复了 `GET /user` 泄露密码哈希的问题）
+- [x] **Service 拆分** — 同步/冲突逻辑拆到 `src/keeping/sync.service.ts`（`SyncService`），`KeepingService` 只管 CRUD/批量落库
+- [x] **API 版本控制** — `enableVersioning(URI)`，所有路由挂 `/v1` 下。**注意：前端 BASE_URL 需同步加 `/v1` 前缀**
+- [x] **Logger 中间件** — 全局生效（`forRoutes('{*splat}')`），用 Nest `Logger` 输出方法/路径/状态码/耗时，请求体敏感字段（password/token）自动脱敏
 
-### 🟢 工程化
+### 🟢 工程化（已完成）
 
-- [ ] **日志框架** — 替换 `console.log` / `console.error` 为 `@nestjs/common` 的 Logger 或 winston
-- [ ] **Docker 化** — 添加 `Dockerfile` + `docker-compose.yml`（MySQL + MinIO + App）
-- [ ] **CI/CD** — 添加 GitHub Actions 自动化测试和部署
-- [ ] **Rate Limiting** — 接入 `@nestjs/throttler` 防止接口滥用
-- [ ] **Health Check** — 添加 `/health` 健康检查端点
+- [x] **日志框架** — 全部 `console.log/error` 替换为 `@nestjs/common` 的 `Logger`（分级、带上下文）；JWT 日志不再输出 token 内容；异常过滤器 5xx 带堆栈
+- [x] **Docker 化** — 多阶段 `Dockerfile`（生产依赖 + 非 root + HEALTHCHECK）+ `docker-compose.yml`（MySQL + MinIO + 自动建桶 + app）
+- [x] **CI/CD** — `.github/workflows/ci.yml`：lint → build → 单测 → e2e（MySQL service 容器）；deploy 模板已注释备用
+- [x] **Rate Limiting** — `@nestjs/throttler` 全局 100 次/分钟（`THROTTLE_*` 可配），登录/注册收紧到 5 次/分钟
+- [x] **Health Check** — `/v1/health`（`@nestjs/terminus`：数据库 ping + 堆内存），Docker HEALTHCHECK 复用该端点
 
 ---
 
@@ -394,7 +401,7 @@ for await (const line of rl) {
 # 安装
 npm install
 
-# 开发（热更新）
+# 开发（热更新，启动时自动执行未跑过的数据库迁移）
 npm run start:dev
 
 # 生产构建
@@ -402,10 +409,20 @@ npm run build
 npm run start:prod
 
 # 测试
-npm test
-npm run test:e2e
+npm test          # 单测（无需数据库）
+npm run test:e2e  # e2e（需要 MySQL，未配置 DB_* 环境变量时自动跳过）
+
+# 数据库迁移
+npm run migration:generate -- src/migrations/<名称>  # 改实体后生成迁移
+npm run migration:run                                # 执行迁移
+npm run migration:revert                             # 回滚上一次
+
+# Docker 一键拉起（MySQL + MinIO + App）
+docker compose up -d --build
 ```
+
+> ⚠️ **/v1 破坏性变更**：所有接口已挂到 `/v1` 前缀下（如 `/v1/keeping`），存量客户端 BASE_URL 需同步更新。
 
 ## 环境变量
 
-参考 `.env.example`，配置数据库和 MinIO 连接信息。
+参考 `.env.example`，配置数据库、MinIO、JWT、限流等连接信息。迁移与部署细节见 `docs/migrations-and-deploy.md`。
