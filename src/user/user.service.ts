@@ -11,7 +11,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) { }
+  ) {}
 
   async getUsers(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;

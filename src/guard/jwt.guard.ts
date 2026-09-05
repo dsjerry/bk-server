@@ -1,26 +1,25 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class JwtGuard extends AuthGuard('jwt') {
-    constructor() {
-        super();
-    }
+  constructor() {
+    super();
+  }
 
-    async canActivate(context: ExecutionContext) {
-        let result: any = false
-        try {
-            result = await super.canActivate(context);
-            return result
-        } catch (error) {
-            throw new UnauthorizedException('TOKEN验证不通过', error);
-        }
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    try {
+      return (await super.canActivate(context)) as boolean;
+    } catch (error) {
+      throw new UnauthorizedException('TOKEN验证不通过', error as Error);
     }
+  }
 
-    handleRequest(err: any, user: any, info: any) {
-        if (err || !user) {
-            throw err || new UnauthorizedException('验证不通过', info);
-        }
-        return user;
+  // 泛型签名对齐 passport 的 IAuthGuard，验证结果原样挂到 req.user 上
+  handleRequest<TUser = BKS.ReqUser>(err: unknown, user: TUser, info: unknown): TUser {
+    if (err || !user) {
+      throw err instanceof Error ? err : new UnauthorizedException('验证不通过', info as Error);
     }
+    return user;
+  }
 }

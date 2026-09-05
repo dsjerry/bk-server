@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('欢迎语里应指向正确的文档地址', () => {
+      expect(appController.getHello()).toContain('/api-docs');
     });
   });
 });

@@ -11,4 +11,4 @@ import { User, File } from 'src/entity';
   providers: [UserService, UploadHistoryService],
   exports: [UserService, UploadHistoryService],
 })
-export class UserModule { }
+export class UserModule {}

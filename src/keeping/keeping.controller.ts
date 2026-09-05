@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Body, UseGuards, Req, Delete, Patch, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Delete, Patch, Param, Query } from '@nestjs/common';
 import { KeepingService } from './keeping.service';
+import { SyncService } from './sync.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Keeping } from 'src/entity/keeping.entity';
-import { KeepingCreateDto, KeepingUpdateDto, PaginatedKeepingResponse, KeepingBatchDto, SyncPayload, SyncResult } from 'src/dto/keeping.dto';
-import { PaginationDto } from 'src/dto/pagination.dto';
+import {
+  KeepingCreateDto,
+  KeepingUpdateDto,
+  PaginatedKeepingResponse,
+  KeepingBatchDto,
+  SyncPayload,
+  SyncResult,
+  KeepingFilterDto,
+} from 'src/dto/keeping.dto';
+import { KeepingResponseDto } from 'src/dto/keeping-response.dto';
 import { JwtGuard } from 'src/guard/jwt.guard';
 import { ReqUser } from 'src/decorator';
 
@@ -11,65 +19,63 @@ import { ReqUser } from 'src/decorator';
 @UseGuards(JwtGuard)
 @Controller('keeping')
 export class KeepingController {
-  constructor(private readonly keepingService: KeepingService) { }
+  constructor(
+    private readonly keepingService: KeepingService,
+    private readonly syncService: SyncService,
+  ) {}
 
   @Get()
   @ApiOkResponse({
-    description: '获取所有记账',
+    description: '获取当前用户的记账（支持关键字/类型/分类/时间区间过滤）',
     type: PaginatedKeepingResponse,
   })
-  getKeepings(@Query() paginationDto: PaginationDto) {
-    return this.keepingService.findAll(paginationDto);
+  getKeepings(@Query() filterDto: KeepingFilterDto, @ReqUser() user: BKS.ReqUser) {
+    return this.keepingService.findAll(filterDto, user.userId);
   }
 
   @Get(':id')
   @ApiOkResponse({
-    description: '获取记账详情',
-    type: Keeping,
+    description: '获取记账详情（仅本人可见）',
+    type: KeepingResponseDto,
   })
-  getKeepingById(@Param('id') id: number) {
-    return this.keepingService.findOne(id);
+  getKeepingById(@Param('id') id: number, @ReqUser() user: BKS.ReqUser) {
+    return this.keepingService.findOne(id, user.userId);
   }
 
   @Post()
   @ApiOkResponse({
     description: '添加记账',
-    type: Keeping,
+    type: KeepingResponseDto,
   })
-  addKeeping(@Body() keepingDto: KeepingCreateDto, @Req() req: any) {
-    const userId = req.user.userId as number;
-    return this.keepingService.create(keepingDto, userId);
+  addKeeping(@Body() keepingDto: KeepingCreateDto, @ReqUser() user: BKS.ReqUser) {
+    return this.keepingService.create(keepingDto, user.userId);
   }
 
   @Delete(':id')
   @ApiOkResponse({
-    description: '删除记账',
-    type: Keeping,
+    description: '删除记账（软删除，仅本人记录）',
+    type: String,
   })
-  deleteKeeping(@Param('id') id: number) {
-    return this.keepingService.delete(id);
+  deleteKeeping(@Param('id') id: number, @ReqUser() user: BKS.ReqUser) {
+    return this.keepingService.delete(id, user.userId);
   }
 
   @Patch(':id')
   @ApiOkResponse({
     description: '更新记账',
-    type: Keeping,
+    type: KeepingResponseDto,
   })
-  updateKeeping(@Param('id') id: number, @Req() req: any, @Body() keepingDto: KeepingUpdateDto) {
-    const userId = req.user.userId as number;
-    return this.keepingService.update({ ...keepingDto, id }, userId);
+  updateKeeping(@Param('id') id: number, @ReqUser() user: BKS.ReqUser, @Body() keepingDto: KeepingUpdateDto) {
+    return this.keepingService.update({ ...keepingDto, id }, user.userId);
   }
 
   @Post('batch')
-  @ApiOperation({ summary: '批量操作记账数据' })
+  @ApiOperation({ summary: '批量操作记账数据（事务保证原子性）' })
   @ApiOkResponse({
     description: '批量同步记账数据',
     type: String,
   })
-  async batchUpsert(
-    @Body() body: KeepingBatchDto,
-    @ReqUser() user: BKS.ReqUser
-  ) {
+  async batchUpsert(@Body() body: KeepingBatchDto, @ReqUser() user: BKS.ReqUser) {
     return this.keepingService.batchOperation(body, user.userId);
   }
 
@@ -77,12 +83,9 @@ export class KeepingController {
   @ApiOperation({ summary: '数据同步（带冲突解决）' })
   @ApiOkResponse({
     description: '返回同步结果及冲突数据',
-    type: SyncResult
+    type: SyncResult,
   })
-  async handleSync(
-    @Body() payload: SyncPayload,
-    @ReqUser() user: BKS.ReqUser
-  ) {
-    return this.keepingService.handleSync(payload, user.userId);
+  async handleSync(@Body() payload: SyncPayload, @ReqUser() user: BKS.ReqUser) {
+    return this.syncService.handleSync(payload, user.userId);
   }
 }

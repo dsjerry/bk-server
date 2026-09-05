@@ -12,26 +12,33 @@ import { File } from 'src/entity';
 import { MinioModule } from 'src/minio/minio.module';
 
 @Module({
-    imports: [UserModule, JwtModule, TypeOrmModule.forFeature([File]), MulterModule.registerAsync({
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-            /**
-             * dest 简单的配置，只需要设置上传目录
-             */
-            // dest: configService.get('UPLOAD_DIR'),
-            storage: diskStorage({
-                destination: configService.get('UPLOAD_DIR'),  // 设置上传目录
-                filename: (req, file, callback) => {
-                    const randomName = Array(32).fill(null)
-                        .map(() => Math.round(Math.random() * 16).toString(16))
-                        .join('');
-                    callback(null, `${randomName}${extname(file.originalname)}`);
-                }
-            })
+  imports: [
+    UserModule,
+    JwtModule,
+    TypeOrmModule.forFeature([File]),
+    MulterModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        /**
+         * dest 简单的配置，只需要设置上传目录
+         */
+        // dest: configService.get('UPLOAD_DIR'),
+        storage: diskStorage({
+          destination: configService.get('UPLOAD_DIR'), // 设置上传目录
+          filename: (req, file, callback) => {
+            const randomName = Array(32)
+              .fill(null)
+              .map(() => Math.round(Math.random() * 16).toString(16))
+              .join('');
+            callback(null, `${randomName}${extname(file.originalname)}`);
+          },
         }),
-    }), MinioModule],
-    controllers: [FileController],
-    providers: [FileService],
-    exports: [FileService],
+      }),
+    }),
+    MinioModule,
+  ],
+  controllers: [FileController],
+  providers: [FileService],
+  exports: [FileService],
 })
-export class FileModule { }
+export class FileModule {}

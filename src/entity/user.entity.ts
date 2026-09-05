@@ -1,8 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { Exclude } from 'class-transformer';
-import { File as FileEntity } from 'src/entity'
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Index } from 'typeorm';
+import { File as FileEntity } from 'src/entity';
 
+/**
+ * username 唯一索引：注册查重和登录查询都按 username 检索。
+ * 之前唯一性只靠 Service 层先查后插保证，并发下存在竞态；索引交给数据库兜底。
+ * 注意：如果存量数据里已有重复 username，建索引会失败，需先人工去重。
+ */
 @Entity()
+@Index('idx_user_username_unique', ['username'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -13,7 +18,6 @@ export class User {
   @Column()
   age: number;
 
-  @Exclude()
   @Column()
   password: string;
 
@@ -26,6 +30,6 @@ export class User {
   @Column({ nullable: true })
   avatar?: string;
 
-  @OneToMany((type) => FileEntity, (file) => file.user)
+  @OneToMany(() => FileEntity, (file) => file.user)
   files: FileEntity[];
 }

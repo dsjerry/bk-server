@@ -1,13 +1,13 @@
-import { IsString, IsOptional } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCategoryDto {
-    @ApiProperty({ description: '名称' })
-    @IsString()
-    name: string
+  @ApiProperty({ description: '名称' })
+  @IsString()
+  name: string;
 
-    @ApiProperty({ description: '图标' })
-    @IsString()
-    @IsOptional()
-    icon: string
+  @ApiProperty({ description: '图标', required: false })
+  @IsString()
+  @IsOptional()
+  icon?: string;
 }

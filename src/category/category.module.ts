@@ -9,4 +9,4 @@ import { Category } from 'src/entity/category.entity';
   providers: [CategoryService],
   imports: [TypeOrmModule.forFeature([Category])],
 })
-export class CategoryModule { }
+export class CategoryModule {}

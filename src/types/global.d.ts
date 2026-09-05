@@ -1,23 +1,23 @@
-import { MimeType } from "file-type";
+import { MimeType } from 'file-type';
 
 declare global {
-    namespace BKS {
-        type DownloadFileTokenInfo = {
-            userId: number;
-            filepath: string;
-            mime?: MimeType;
-            // minio
-            bucketName?: string;
-            objectName?: string;
-        }
+  namespace BKS {
+    type DownloadFileTokenInfo = {
+      userId: number;
+      filepath: string;
+      mime?: MimeType;
+      // minio
+      bucketName?: string;
+      objectName?: string;
+    };
 
-        /** 请求头中提取的用户信息，在jwt.strategy.ts中配置 */
-        interface ReqUser {
-            userId: number
-            username: string
-            [key: string]: any
-        }
-
-        type JWTType = "access" | "refresh" | "file"
+    /** 请求头中提取的用户信息，在jwt.strategy.ts中配置 */
+    interface ReqUser {
+      userId: number;
+      username: string;
+      [key: string]: any;
     }
+
+    type JWTType = 'access' | 'refresh' | 'file';
+  }
 }

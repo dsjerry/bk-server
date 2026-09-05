@@ -1,14 +1,14 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class CreateAnalysisDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    content: string;
+  @IsNotEmpty()
+  content: string;
 
-    reasoningContent?: string;
+  reasoningContent?: string;
 
-    @IsNotEmpty()
-    keepingId: number;
+  @IsNotEmpty()
+  keepingId: number;
 }
